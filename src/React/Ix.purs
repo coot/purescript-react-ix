@@ -230,30 +230,38 @@ type ComponentWillUnmountIx props state r ro eff
       { | r} { | ro}
       (ReactThisIx props state ro)
 
-type ReactSpecIx p s (r :: # Type) (rr :: # Type) (ro :: # Type) (eff :: # Effect) =
-  Subrow r rr =>
+-- | Track added properties on the type level. `ri` row describe added
+-- | properties in `ComponentWillMount` (callbacks), `rr` describes added
+-- | properties withing render method (refs) and `ro` is the state of
+-- | `ReactThis` after `compoentnWillUnmount`. Likely you want to use
+-- | ``` purescript
+-- | ReactSPecIx p s ri rr () eff
+-- | ```
+-- | This will ensure that you don't leak memory, by keeping a reference.
+type ReactSpecIx p s (ri :: # Type) (rr :: # Type) (ro :: # Type) (eff :: # Effect) =
+  Subrow ri rr =>
   Subrow ro rr =>
-  { render :: RenderIx p s r rr eff
+  { render :: RenderIx p s ri rr eff
   , displayName :: String
-  , getInitialState :: GetInitialStateIx p s r eff
-  , componentWillMount :: ComponentWillMountIx p s r eff
-  , componentDidMount :: ComponentDidMountIx p s r eff
-  , componentWillReceiveProps :: ComponentWillReceivePropsIx p s r eff
-  , shouldComponentUpdate :: ShouldComponentUpdateIx p s r eff
-  , componentWillUpdate :: ComponentWillUpdateIx p s r eff
-  , componentDidUpdate :: ComponentDidUpdateIx p s r eff
+  , getInitialState :: GetInitialStateIx p s ri eff
+  , componentWillMount :: ComponentWillMountIx p s ri eff
+  , componentDidMount :: ComponentDidMountIx p s ri eff
+  , componentWillReceiveProps :: ComponentWillReceivePropsIx p s ri eff
+  , shouldComponentUpdate :: ShouldComponentUpdateIx p s ri eff
+  , componentWillUpdate :: ComponentWillUpdateIx p s ri eff
+  , componentDidUpdate :: ComponentDidUpdateIx p s ri eff
   , componentWillUnmount :: ComponentWillUnmountIx p s rr ro eff
   }
 
 specIx'
-  :: forall p s r rr ro eff
+  :: forall p s ri rr ro eff
    . Subrow ro rr
-  => Subrow r rr
-  => GetInitialStateIx p s r eff
-  -> ComponentWillMountIx p s r eff
+  => Subrow ri rr
+  => GetInitialStateIx p s ri eff
+  -> ComponentWillMountIx p s ri eff
   -> ComponentWillUnmountIx p s rr ro eff
-  -> RenderIx p s r rr eff
-  -> ReactSpecIx p s r rr ro eff
+  -> RenderIx p s ri rr eff
+  -> ReactSpecIx p s ri rr ro eff
 specIx' getInitialState componentWillMount componentWillUnmount renderFn =
   { render: renderFn
   , displayName: ""
@@ -275,10 +283,10 @@ specIx
 specIx s r = (specIx' (\_ -> pure s) pure pure r)
 
 toReactSpec
-  :: forall p s r rr ro eff
-   . Subrow r rr
+  :: forall p s ri rr ro eff
+   . Subrow ri rr
   => Subrow ro rr
-  => ReactSpecIx p s r rr ro eff
+  => ReactSpecIx p s ri rr ro eff
   -> ReactSpec p s eff
 toReactSpec
   { render
@@ -305,10 +313,10 @@ toReactSpec
     }
 
 createClassIx
-  :: forall p s r rr ro eff
-   . Subrow r rr
+  :: forall p s ri rr ro eff
+   . Subrow ri rr
   => Subrow ro rr
-  => ReactSpecIx p s r rr ro eff
+  => ReactSpecIx p s ri rr ro eff
   -> ReactClass p
 createClassIx spc = createClass (toReactSpec spc)
 
