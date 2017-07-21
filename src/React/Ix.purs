@@ -1,4 +1,4 @@
-module React.Recs where
+module React.Ix where
 
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.Uncurried (EffFn2, EffFn3, runEffFn2, runEffFn3)
@@ -7,7 +7,7 @@ import Data.Symbol (reflectSymbol)
 import Prelude (Unit, pure, unit, ($))
 import React (Disallowed, ReactElement, ReactProps, ReactRefs, ReactState, ReactThis, ReadOnly, ReadWrite)
 import React.DOM.Props (Props, unsafeMkProps)
-import React.Recs.EffR (EffR(..), unsafePerformEffR)
+import React.Ix.EffR (EffR(..), unsafePerformEffR)
 import Type.Data.Symbol (class IsSymbol, SProxy)
 import Type.Row (class RowLacks)
 import Unsafe.Coerce (unsafeCoerce)

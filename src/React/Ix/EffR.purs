@@ -1,4 +1,4 @@
-module React.Recs.EffR where
+module React.Ix.EffR where
 
 import Control.IxMonad (class IxMonad)
 import Control.Monad.Eff (Eff, kind Effect)

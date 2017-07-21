@@ -11,8 +11,8 @@ import Data.Maybe (Maybe(..))
 import React (Event, ReactProps, ReactRefs, ReactState, ReadOnly, ReadWrite, readState, transformState)
 import React.DOM as D
 import React.DOM.Props as P
-import React.Recs (ComponentWillMount, ComponentWillUnmount, Render, Spec, This(..), deleteIx, getIx, insertIx, refFn, spec, spec')
-import React.Recs.EffR (EffR)
+import React.Ix (ComponentWillMount, ComponentWillUnmount, Render, Spec, This(..), deleteIx, getIx, insertIx, refFn, spec, spec')
+import React.Ix.EffR (EffR)
 import Type.Data.Symbol (SProxy(..))
 
 refSpec :: forall eff. Spec Unit Unit () ( element :: HTMLElement ) ( element :: HTMLElement ) eff
@@ -110,4 +110,4 @@ cSpec = (spec' (\_ -> pure 0) componentWillMount componentWillUnmount render)
 
 main :: forall e. Eff (console :: CONSOLE | e) Unit
 main = do
-  log "You should add some tests."
+  log "Well done budy..."
