@@ -11,22 +11,22 @@ import Data.Maybe (Maybe(..))
 import React (Event, ReactProps, ReactRefs, ReactState, ReadOnly, ReadWrite, readState, transformState)
 import React.DOM as D
 import React.DOM.Props as P
-import React.Ix (ComponentWillMount, ComponentWillUnmount, Render, Spec, This(..), deleteIx, getIx, insertIx, refFn, spec, spec')
+import React.Ix (ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(..), ReactThisIx(..), RenderIx, deleteIx, getIx, insertIx, refFn, specIx, specIx')
 import React.Ix.EffR (EffR)
 import Type.Data.Symbol (SProxy(..))
 
-refSpec :: forall eff. Spec Unit Unit () ( element :: HTMLElement ) ( element :: HTMLElement ) eff
-refSpec = spec' (\_ -> ipure unit) willMount willUnmount renderFn
+refSpec :: forall eff. ReactSpecIx Unit Unit () ( element :: HTMLElement ) ( element :: HTMLElement ) eff
+refSpec = specIx' (\_ -> ipure unit) willMount willUnmount renderFn
   where
-    willMount :: ComponentWillMount Unit Unit () eff
+    willMount :: ComponentWillMountIx Unit Unit () eff
     willMount = ipure
 
-    willUnmount :: ComponentWillUnmount Unit Unit ( element :: HTMLElement ) ( element :: HTMLElement) eff
+    willUnmount :: ComponentWillUnmountIx Unit Unit ( element :: HTMLElement ) ( element :: HTMLElement) eff
     willUnmount = ipure
 
     setRef
       :: forall e
-       . This Unit Unit ()
+       . ReactThisIx Unit Unit ()
       -> HTMLElement
       -> EffR e
           {}
@@ -35,7 +35,7 @@ refSpec = spec' (\_ -> ipure unit) willMount willUnmount renderFn
     setRef this el =
       void $ insertIx (SProxy :: SProxy "element") el this
 
-    renderFn :: Render Unit Unit () (element :: HTMLElement) eff
+    renderFn :: RenderIx Unit Unit () (element :: HTMLElement) eff
     renderFn this =
       refFn (setRef this)
       :>>= \prop ->
@@ -44,21 +44,21 @@ refSpec = spec' (\_ -> ipure unit) willMount willUnmount renderFn
           ]
           [ D.text ":)" ]
 
-sSpec :: forall eff. Spec Unit Unit () () () eff
-sSpec = spec unit (\_ -> pure $ D.div' [ D.text "Hello world!" ])
+sSpec :: forall eff. ReactSpecIx Unit Unit () () () eff
+sSpec = specIx unit (\_ -> pure $ D.div' [ D.text "Hello world!" ])
 
-cWillUnmount :: forall eff. ComponentWillUnmount Unit Int ( count :: Maybe Int, name :: String ) ( name :: String ) eff
+cWillUnmount :: forall eff. ComponentWillUnmountIx Unit Int ( count :: Maybe Int, name :: String ) ( name :: String ) eff
 cWillUnmount this = do
   deleteIx (SProxy :: SProxy "count") this
 
-cWillMount :: forall eff. ComponentWillMount Unit Int ( count :: Maybe Int, name :: String ) eff
+cWillMount :: forall eff. ComponentWillMountIx Unit Int ( count :: Maybe Int, name :: String ) eff
 cWillMount this =
   insertIx (SProxy :: SProxy "count") (Just 0) this
   :>>= insertIx (SProxy :: SProxy "name") "cSpec"
 
 cSpec
   :: forall eff
-   . Spec Unit Int
+   . ReactSpecIx Unit Int
       ( count :: Maybe Int
       , name :: String
       , handler
@@ -83,12 +83,12 @@ cSpec
       )
       ()
       eff
-cSpec = (spec' (\_ -> pure 0) componentWillMount componentWillUnmount render)
+cSpec = (specIx' (\_ -> pure 0) componentWillMount componentWillUnmount render)
   { displayName = "cSpec" }
     where
       handler this ev =
         -- `This` is not `ReactThis`
-        transformState (case this of This rThis -> rThis) (add 1)
+        transformState (case this of ReactThisIx rThis -> rThis) (add 1)
 
       componentWillMount t0 = do
         t1 <- insertIx (SProxy :: SProxy "count") (Just 0) t0
@@ -103,7 +103,7 @@ cSpec = (spec' (\_ -> pure 0) componentWillMount componentWillUnmount render)
         :>>= deleteIx (SProxy :: SProxy "handler")
         :>>= deleteIx (SProxy :: SProxy "name")
 
-      render (this@This that) = do
+      render (this@ReactThisIx that) = do
         c <- liftEff $ readState that
         h <- getIx (SProxy :: SProxy "handler") this
         pure $ D.div [ P.onClick h ] [ D.text (show c) ]
