@@ -2,10 +2,10 @@ module React.Recs where
 
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.Uncurried (EffFn2, EffFn3, runEffFn2, runEffFn3)
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(Just))
 import Data.Symbol (reflectSymbol)
 import Prelude (Unit, add, bind, pure, show, unit, ($), (>>=))
-import React (Disallowed, Event, ReactElement, ReactProps, ReactRefs, ReactState, ReactThis, ReadOnly, ReadWrite, transformState)
+import React (Disallowed, Event, ReactElement, ReactProps, ReactRefs, ReactState, ReactThis, ReadOnly, ReadWrite, readState, transformState)
 import React.DOM as D
 import React.DOM.Props as P
 import Type.Data.Symbol (class IsSymbol, SProxy(..))
@@ -15,12 +15,6 @@ newtype This p s (r :: # Type) = This (ReactThis p s)
 
 class Subrow (r :: # Type) (s :: # Type)
 instance srInst :: Union r t s => Subrow r s
-
-test :: Subrow () (a :: Int) => String
-test = ""
-
-a :: String
-a = test
 
 foreign import unsafeGetImpl :: forall a b eff. EffFn2 eff String a b
 
@@ -159,17 +153,17 @@ type ComponentDidUpdate props state r eff =
     ) Unit
 
 -- | A component will unmount function.
-type ComponentWillUnmount props state r1 eff =
-  -- Subrow r2 r1 =>
-  This props state r1 ->
+type ComponentWillUnmount props state r ro eff =
+  This props state r ->
   Eff
     ( props :: ReactProps
     , state :: ReactState ReadOnly
     , refs :: ReactRefs ReadOnly
     | eff
-    ) (This props state ())
+    ) (This props state ro)
 
-type Spec p s (r :: # Type) (eff :: # Effect) =
+type Spec p s (r :: # Type) (ro :: # Type) (eff :: # Effect) =
+  Subrow ro r =>
   { render :: Render p s r eff
   , displayName :: String
   , getInitialState :: GetInitialState p s r eff
@@ -179,16 +173,17 @@ type Spec p s (r :: # Type) (eff :: # Effect) =
   , shouldComponentUpdate :: ShouldComponentUpdate p s r eff
   , componentWillUpdate :: ComponentWillUpdate p s r eff
   , componentDidUpdate :: ComponentDidUpdate p s r eff
-  , componentWillUnmount :: ComponentWillUnmount p s r eff
+  , componentWillUnmount :: ComponentWillUnmount p s r ro eff
   }
 
 spec'
-  :: forall p s r eff
-   . GetInitialState p s r eff
+  :: forall p s r ro eff
+   . Subrow ro r
+  => GetInitialState p s r eff
   -> ComponentWillMount p s r eff
-  -> ComponentWillUnmount p s r eff
+  -> ComponentWillUnmount p s r ro eff
   -> Render p s r eff
-  -> Spec p s r eff
+  -> Spec p s r ro eff
 spec' getInitialState componentWillMount componentWillUnmount renderFn = 
   { render: renderFn
   , displayName: ""
@@ -206,15 +201,19 @@ spec
   :: forall p s eff
    . s
   -> Render p s () eff
-  -> Spec p s () eff
+  -> Spec p s () () eff
 spec s r = (spec' (\_ -> pure s) pure pure r)
 
 -- test
+
+sSpec :: forall eff. Spec Unit Unit () () eff
+sSpec = spec unit (\_ -> pure $ D.div' [ D.text "Hello world!" ])
 
 cSpec
   :: forall eff
    . Spec Unit Int
       ( count :: Maybe Int
+      , name :: String
       , handler
           :: Event
           -> Eff
@@ -223,6 +222,7 @@ cSpec
               , state :: ReactState ReadWrite
               | eff )
               Unit )
+      ( name :: String)
       eff
 cSpec = (spec' (\_ -> pure 0) componentWillMount componentWillUnmount render)
   { displayName = "cSpec" }
@@ -234,13 +234,14 @@ cSpec = (spec' (\_ -> pure 0) componentWillMount componentWillUnmount render)
       componentWillMount this =
         insert (SProxy :: SProxy "count") (Just 0) this
         >>= insert (SProxy :: SProxy "handler") (handler this)
+        >>= insert (SProxy :: SProxy "name") "cSpec"
 
       -- this can be derived by the compiler
       componentWillUnmount this =
         delete (SProxy :: SProxy "count") this
         >>= delete (SProxy :: SProxy "handler")
 
-      render this = do
-        c <- get (SProxy :: SProxy "count") this
+      render (this@This that) = do
+        c <- readState that
         h <- get (SProxy :: SProxy "handler") this
-        pure $ D.div [ P.onClick h ] [ D.text (show (fromMaybe 0 c)) ]
+        pure $ D.div [ P.onClick h ] [ D.text (show c) ]
