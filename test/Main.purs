@@ -11,7 +11,7 @@ import Data.Maybe (Maybe(..))
 import React (Event, ReactProps, ReactRefs, ReactState, ReadOnly, ReadWrite, readState, transformState)
 import React.DOM as D
 import React.DOM.Props as P
-import React.Ix (ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(..), ReactThisIx(..), RenderIx, deleteIx, getIx, insertIx, refFn, specIx, specIx')
+import React.Ix (ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(..), RenderIx, deleteIx, getIx, insertIx, refFn, specIx, specIx')
 import React.Ix.EffR (EffR)
 import Type.Data.Symbol (SProxy(..))
 
