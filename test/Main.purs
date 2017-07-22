@@ -16,7 +16,7 @@ import Data.Array ((!!))
 import Data.Array as A
 import Data.Either (Either(..))
 import Data.Foreign (Foreign, isNull, readString)
-import Data.Maybe (Maybe(..), isNothing)
+import Data.Maybe (Maybe(Just, Nothing))
 import Enzyme (mount)
 import Enzyme.ReactWrapper as E
 import Enzyme.Types (ENZYME)
