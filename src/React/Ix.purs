@@ -25,6 +25,7 @@ module React.Ix
 
   , toReactSpec
   , fromReactSpec
+  , underReactSpecIx
   , createClassIx
 
   , refFn
@@ -351,6 +352,17 @@ fromReactSpec
     , componentDidUpdate: \(ReactThisIx rThis) p s -> EffR $ componentDidUpdate rThis p s
     , componentWillUnmount: \(ReactThisIx rThis) -> EffR (componentWillUnmount rThis) $> ReactThisIx rThis
     }
+
+-- | Think of `ReactSpecIx` as a newtype wrapper around `ReactSpecIx`, thus
+-- | `under`.
+underReactSpecIx
+  :: forall p1 s1 p2 s2 i r o eff1 eff2
+   . Subrow i r
+  => Subrow o r
+  => (ReactSpecIx p1 s1 () () () eff1 -> ReactSpecIx p2 s2 i r o eff2)
+  -> ReactSpec p1 s1 eff1
+  -> ReactSpec p2 s2 eff2
+underReactSpecIx f s = toReactSpec (f (fromReactSpec s))
 
 createClassIx
   :: forall p s ri rr ro eff
