@@ -94,7 +94,7 @@ setPropIx
   => SProxy l
   -> b
   -> ReactThisIx p s r1
-  -> EffR eff { | r} { | r} (ReactThisIx p s r2)
+  -> EffR eff { | r1} { | r2} (ReactThisIx p s r2)
 setPropIx l b r = EffR $ setProp l b r
 
 foreign import unsafeInsertImpl :: forall a b c eff. EffFn3 eff String a b c

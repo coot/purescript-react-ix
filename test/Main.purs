@@ -23,12 +23,13 @@ import Enzyme.Types (ENZYME)
 import React (Event, ReactProps, ReactRefs, ReactState, ReadOnly, ReadWrite, ReactSpec, createElement, readState, spec, transformState)
 import React.DOM as D
 import React.DOM.Props as P
-import React.Ix (ComponentDidMountIx, ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(ReactThisIx), RenderIx, createClassIx, fromReactSpec, getProp, getPropIx, insertPropIx, nullifyPropIx, refFn, specIx, specIx', toReactSpec)
-import React.Ix.EffR (EffR)
+import React.Ix (ComponentDidMountIx, ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(ReactThisIx), RenderIx, createClassIx, fromReactSpec, getProp, getPropIx, insertPropIx, nullifyPropIx, refFn, setPropIx, specIx, specIx', toReactSpec)
+import React.Ix.EffR (EffR(..))
 import Test.Unit (failure, success, suite, test)
 import Test.Unit.Assert (assert, equal)
 import Test.Unit.Karma (runKarma)
 import Type.Data.Symbol (SProxy(..))
+import Unsafe.Coerce (unsafeCoerce)
 
 foreign import unsafeListPropsImpl :: forall a eff. EffFn1 eff a (Array { key :: String, value :: Foreign })
 
@@ -220,3 +221,47 @@ main = runKarma do
         s :: forall eff. ReactSpec Unit Unit eff
         s = toReactSpec sSpec
       in success
+
+    test "getPropIx"
+      let 
+        this :: ReactThisIx Unit Unit (a :: Boolean)
+        this = unsafeCoerce {a: true}
+
+        m :: forall eff. EffR eff {a :: Boolean} {a :: Boolean} Boolean
+        m = getPropIx (SProxy :: SProxy "a") this
+      in do
+        r <- liftEff (case m of EffR m' -> m')
+        equal true r
+
+    test "setPropIx"
+      let 
+        this :: ReactThisIx Unit Unit (a :: Boolean)
+        this = unsafeCoerce {a: false}
+
+        m :: forall eff. EffR eff {a :: Boolean} {a :: Boolean} (ReactThisIx Unit Unit (a :: Boolean))
+        m = setPropIx (SProxy :: SProxy "a") true this
+      in do
+        this_ <- liftEff (case m of EffR m' -> m')
+        equal true (unsafeCoerce this_).a
+
+    test "insertPropIx"
+      let
+        this :: ReactThisIx Unit Unit ()
+        this = unsafeCoerce {}
+        
+        m :: forall eff. EffR eff {} {a :: Boolean} (ReactThisIx Unit Unit (a :: Boolean))
+        m = insertPropIx (SProxy :: SProxy "a") false this
+      in do
+        this_ <- liftEff (case m of EffR m' -> m')
+        equal false (unsafeCoerce this_).a
+
+    test "nullifyPropIx"
+      let
+        this :: ReactThisIx Unit Unit (a :: Boolean)
+        this = unsafeCoerce {a: false}
+
+        m :: forall eff. EffR eff {a :: Boolean} {} (ReactThisIx Unit Unit ())
+        m = nullifyPropIx (SProxy :: SProxy "a") this
+      in do
+        this_ <- liftEff (case m of EffR m' -> m')
+        equal true (isNull (unsafeCoerce this_).a)
