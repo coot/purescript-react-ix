@@ -4,6 +4,8 @@ module React.Ix
   , getPropIx
   , setProp
   , setPropIx
+  , modifyProp
+  , modifyPropIx
   , insertPropIx
   , nullifyPropIx
 
@@ -96,6 +98,30 @@ setPropIx
   -> ReactThisIx p s r1
   -> EffR eff { | r1} { | r2} (ReactThisIx p s r2)
 setPropIx l b r = EffR $ setProp l b r
+
+foreign import unsafeModifyImpl :: forall a b c d eff. EffFn3 eff String (a -> b) c d
+
+modifyProp
+  :: forall r1 r2 r l a b p s eff
+   . IsSymbol l
+  => RowCons l a r r1
+  => RowCons l b r r2
+  => SProxy l
+  -> (a -> b)
+  -> ReactThisIx p s r1
+  -> Eff eff (ReactThisIx p s r2)
+modifyProp l f (ReactThisIx r) = ReactThisIx <$> runEffFn3 unsafeModifyImpl (reflectSymbol l) f r
+
+modifyPropIx
+  :: forall r1 r2 r l a b p s eff
+   . IsSymbol l
+  => RowCons l a r r1
+  => RowCons l b r r2
+  => SProxy l
+  -> (a -> b)
+  -> ReactThisIx p s r1
+  -> EffR eff { | r1} { | r2} (ReactThisIx p s r2)
+modifyPropIx l f r = EffR $ modifyProp l f r
 
 foreign import unsafeInsertImpl :: forall a b c eff. EffFn3 eff String a b c
 

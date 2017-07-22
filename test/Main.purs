@@ -23,7 +23,7 @@ import Enzyme.Types (ENZYME)
 import React (Event, ReactProps, ReactRefs, ReactState, ReadOnly, ReadWrite, ReactSpec, createElement, readState, spec, transformState)
 import React.DOM as D
 import React.DOM.Props as P
-import React.Ix (ComponentDidMountIx, ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(ReactThisIx), RenderIx, createClassIx, fromReactSpec, getProp, getPropIx, insertPropIx, nullifyPropIx, refFn, setPropIx, specIx, specIx', toReactSpec)
+import React.Ix (ComponentDidMountIx, ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(ReactThisIx), RenderIx, createClassIx, fromReactSpec, getProp, getPropIx, insertPropIx, nullifyPropIx, refFn, setPropIx, modifyPropIx, specIx, specIx', toReactSpec)
 import React.Ix.EffR (EffR(..))
 import Test.Unit (failure, success, suite, test)
 import Test.Unit.Assert (assert, equal)
@@ -238,11 +238,22 @@ main = runKarma do
         this :: ReactThisIx Unit Unit (a :: Boolean)
         this = unsafeCoerce {a: false}
 
-        m :: forall eff. EffR eff {a :: Boolean} {a :: Boolean} (ReactThisIx Unit Unit (a :: Boolean))
-        m = setPropIx (SProxy :: SProxy "a") true this
+        m :: forall eff. EffR eff {a :: Boolean} {a :: Int} (ReactThisIx Unit Unit (a :: Int))
+        m = setPropIx (SProxy :: SProxy "a") 1 this
       in do
         this_ <- liftEff (case m of EffR m' -> m')
-        equal true (unsafeCoerce this_).a
+        equal 1 (unsafeCoerce this_).a
+
+    test "modifyPropIx"
+      let 
+        this :: ReactThisIx Unit Unit (a :: Boolean)
+        this = unsafeCoerce {a: true}
+
+        m :: forall eff. EffR eff {a :: Boolean} {a :: Int} (ReactThisIx Unit Unit (a :: Int))
+        m = modifyPropIx (SProxy :: SProxy "a") (if _ then 1 else 0) this
+      in do
+        this_ <- liftEff (case m of EffR m' -> m')
+        equal 1 (unsafeCoerce this_).a
 
     test "insertPropIx"
       let
