@@ -13,5 +13,6 @@ exports.unsafeInsertImpl = function(l, v, o) {
 }
 
 exports.unsafeDeleteImpl = function(l, o) {
-  return o[l] = null, o
+  delete o[l]
+  return o
 }
