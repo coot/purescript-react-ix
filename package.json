@@ -1,0 +1,43 @@
+{
+  "name": "purescript-react-ix",
+  "version": "0.1.0",
+  "description": "PureScript React bindings",
+  "main": "src/React/Ix.purs",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "enzyme": "^2.9.1",
+    "karma": "^1.7.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-firefox-launcher": "^1.0.1",
+    "react": "^15.6.1",
+    "react-addons-test-utils": "^15.6.0",
+    "react-test-renderer": "^15.6.1"
+  },
+  "devDependencies": {
+    "enzyme": "^2.9.1",
+    "karma": "^1.7.0",
+    "karma-chrome-launcher": "^2.2.0",
+    "karma-firefox-launcher": "^1.0.1",
+    "karma-spec-reporter": "0.0.31",
+    "react": "^15.6.1",
+    "react-addons-test-utils": "^15.6.0",
+    "react-dom": "^15.6.1",
+    "react-test-renderer": "^15.6.1"
+  },
+  "scripts": {
+    "pretest": "pulp build -I test -m Test.Main -t karma/test.js && browserify -e karma/test.js -i 'react/addons' -i 'react/lib/ReactContext' -i 'react/lib/ExecutionEnvironment' -o karma/index.js",
+    "test": "karma start --single-run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/coot/purescript-react-ix.git"
+  },
+  "author": "Marcin Szamotulski",
+  "license": "MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/coot/purescript-react-ix/issues"
+  },
+  "homepage": "https://github.com/coot/purescript-react-ix#readme"
+}

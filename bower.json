@@ -1,5 +1,10 @@
 {
   "name": "purescript-react-monadic",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/coot/purescript-react-ix.git"
+  },
   "ignore": [
     "**/.*",
     "node_modules",
