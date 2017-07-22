@@ -1,11 +1,11 @@
 module React.Ix 
   ( class Subrow
-  , get
-  , getIx
-  , set
-  , setIx
-  , insertIx
-  , deleteIx
+  , getProp
+  , getPropIx
+  , setProp
+  , setPropIx
+  , insertPropIx
+  , deletePropIx
 
   , RenderIx
   , GetInitialStateIx
@@ -33,7 +33,7 @@ import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.Uncurried (EffFn2, EffFn3, runEffFn2, runEffFn3)
 import DOM.Classy.Element (class IsElement)
 import Data.Symbol (reflectSymbol)
-import Prelude (Unit, pure, unit, void, ($))
+import Prelude (Unit, pure, unit, void, ($), (<$>))
 import React (Disallowed, ReactClass, ReactElement, ReactProps, ReactRefs, ReactSpec, ReactState, ReactThis, ReadOnly, ReadWrite, createClass)
 import React.DOM.Props (Props, unsafeMkProps)
 import React.Ix.EffR (EffR(..), unsafePerformEffR)
@@ -55,20 +55,20 @@ get
   => SProxy l
   -> ReactThisIx p s r
   -> Eff eff a
-get l r = runEffFn2 unsafeGetImpl (reflectSymbol l) r
+getProp l (ReactThisIx r) = runEffFn2 unsafeGetImpl (reflectSymbol l) r
 
-getIx
+getPropIx
   :: forall r r' l a p s eff
    . IsSymbol l
   => RowCons l a r' r
   => SProxy l
   -> ReactThisIx p s r
   -> EffR eff { | r} { | r} a
-getIx l r = EffR (get l r)
+getPropIx l r = EffR (getProp l r)
 
 foreign import unsafeSetImpl :: forall a b c eff. EffFn3 eff String a b c
 
-set
+setProp
   :: forall r1 r2 r l a b p s eff
    . IsSymbol l
   => RowCons l a r r1
@@ -77,9 +77,9 @@ set
   -> b
   -> ReactThisIx p s r1
   -> Eff eff (ReactThisIx p s r2)
-set l b r = runEffFn3 unsafeSetImpl (reflectSymbol l) b r
+setProp l b (ReactThisIx r) = ReactThisIx <$> runEffFn3 unsafeSetImpl (reflectSymbol l) b r
 
-setIx
+setPropIx
   :: forall r1 r2 r l a b p s eff
    . IsSymbol l
   => RowCons l a r r1
@@ -88,11 +88,11 @@ setIx
   -> b
   -> ReactThisIx p s r1
   -> EffR eff { | r} { | r} (ReactThisIx p s r2)
-setIx l b r = EffR $ set l b r
+setPropIx l b r = EffR $ setProp l b r
 
 foreign import unsafeInsertImpl :: forall a b c eff. EffFn3 eff String a b c
 
-insertIx
+insertPropIx
   :: forall r1 r2 l a p s eff
    . IsSymbol l
   => RowLacks l r1
@@ -101,11 +101,11 @@ insertIx
   -> a
   -> ReactThisIx p s r1
   -> EffR eff { | r1} { | r2} (ReactThisIx p s r2)
-insertIx l a r = EffR $ runEffFn3 unsafeInsertImpl (reflectSymbol l) a r
+insertPropIx l a (ReactThisIx r) = EffR $ ReactThisIx <$> runEffFn3 unsafeInsertImpl (reflectSymbol l) a r
 
 foreign import unsafeDeleteImpl :: forall a b eff. EffFn2 eff String a b
 
-deleteIx
+deletePropIx
   :: forall r1 r2 l a p s eff
    . IsSymbol l
   => RowLacks l r1
@@ -113,7 +113,7 @@ deleteIx
   => SProxy l
   -> ReactThisIx p s r2
   -> EffR eff { | r2} { | r1} (ReactThisIx p s r1)
-deleteIx l r = EffR $ runEffFn2 unsafeDeleteImpl (reflectSymbol l) r
+deletePropIx l (ReactThisIx r) = EffR $ ReactThisIx <$> runEffFn2 unsafeDeleteImpl (reflectSymbol l) r
 
 -- | A render function.
 type RenderIx props state ri ro eff
