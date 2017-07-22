@@ -337,4 +337,7 @@ refFn
    . IsElement el
   => (el -> EffR eff ri ro Unit)
   -> EffR eff ri ro Props
-refFn fn = unsafeCoerce (unsafeMkProps "ref" (\e -> unsafePerformEffR (fn e)))
+refFn fn = EffR $ pureEff (unsafeMkProps "ref" (\e -> unsafePerformEffR (fn e)))
+  where
+    pureEff :: forall a e. a -> Eff e a
+    pureEff = pure
