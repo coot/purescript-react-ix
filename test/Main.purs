@@ -29,6 +29,7 @@ import Test.Unit (failure, success, suite, test)
 import Test.Unit.Assert (assert, equal)
 import Test.Unit.Karma (runKarma)
 import Type.Data.Symbol (SProxy(..))
+import Type.Prelude (RProxy)
 import Unsafe.Coerce (unsafeCoerce)
 
 foreign import unsafeListPropsImpl :: forall a eff. EffFn1 eff a (Array { key :: String, value :: Foreign })
@@ -57,8 +58,8 @@ refSpec ref = (specIx' (\_ -> ipure unit) willMount willUnmount renderFn)
        . ReactThisIx Unit Unit ()
       -> HTMLElement
       -> EffR e
-          {}
-          { element :: HTMLElement }
+          (RProxy ())
+          (RProxy ( element :: HTMLElement ))
           Unit
     setRef this el = do
       void $ insertPropIx (SProxy :: SProxy "element") el this
@@ -227,7 +228,7 @@ main = runKarma do
         this :: ReactThisIx Unit Unit (a :: Boolean)
         this = unsafeCoerce {a: true}
 
-        m :: forall eff. EffR eff {a :: Boolean} {a :: Boolean} Boolean
+        m :: forall eff. EffR eff (RProxy (a :: Boolean)) (RProxy (a :: Boolean)) Boolean
         m = getPropIx (SProxy :: SProxy "a") this
       in do
         r <- liftEff (case m of EffR m' -> m')
@@ -238,7 +239,7 @@ main = runKarma do
         this :: ReactThisIx Unit Unit (a :: Boolean)
         this = unsafeCoerce {a: false}
 
-        m :: forall eff. EffR eff {a :: Boolean} {a :: Int} (ReactThisIx Unit Unit (a :: Int))
+        m :: forall eff. EffR eff (RProxy (a :: Boolean)) (RProxy (a :: Int)) (ReactThisIx Unit Unit (a :: Int))
         m = setPropIx (SProxy :: SProxy "a") 1 this
       in do
         this_ <- liftEff (case m of EffR m' -> m')
@@ -249,7 +250,7 @@ main = runKarma do
         this :: ReactThisIx Unit Unit (a :: Boolean)
         this = unsafeCoerce {a: true}
 
-        m :: forall eff. EffR eff {a :: Boolean} {a :: Int} (ReactThisIx Unit Unit (a :: Int))
+        m :: forall eff. EffR eff (RProxy (a :: Boolean)) (RProxy (a :: Int)) (ReactThisIx Unit Unit (a :: Int))
         m = modifyPropIx (SProxy :: SProxy "a") (if _ then 1 else 0) this
       in do
         this_ <- liftEff (case m of EffR m' -> m')
@@ -260,7 +261,7 @@ main = runKarma do
         this :: ReactThisIx Unit Unit ()
         this = unsafeCoerce {}
         
-        m :: forall eff. EffR eff {} {a :: Boolean} (ReactThisIx Unit Unit (a :: Boolean))
+        m :: forall eff. EffR eff (RProxy ()) (RProxy (a :: Boolean)) (ReactThisIx Unit Unit (a :: Boolean))
         m = insertPropIx (SProxy :: SProxy "a") false this
       in do
         this_ <- liftEff (case m of EffR m' -> m')
@@ -271,7 +272,7 @@ main = runKarma do
         this :: ReactThisIx Unit Unit (a :: Boolean)
         this = unsafeCoerce {a: false}
 
-        m :: forall eff. EffR eff {a :: Boolean} {} (ReactThisIx Unit Unit ())
+        m :: forall eff. EffR eff (RProxy (a :: Boolean)) (RProxy ()) (ReactThisIx Unit Unit ())
         m = nullifyPropIx (SProxy :: SProxy "a") this
       in do
         this_ <- liftEff (case m of EffR m' -> m')

@@ -41,6 +41,7 @@ import React (Disallowed, ReactClass, ReactElement, ReactProps, ReactRefs, React
 import React.DOM.Props (Props, unsafeMkProps)
 import React.Ix.EffR (EffR(..), unsafePerformEffR)
 import Type.Data.Symbol (class IsSymbol, SProxy)
+import Type.Prelude (RProxy)
 import Type.Row (class RowLacks)
 
 newtype ReactThisIx p s (r :: # Type) = ReactThisIx (ReactThis p s)
@@ -72,7 +73,7 @@ getPropIx
   => RowCons l a r' r
   => SProxy l
   -> ReactThisIx p s r
-  -> EffR eff { | r} { | r} a
+  -> EffR eff (RProxy r) (RProxy r) a
 getPropIx l r = EffR (getProp l r)
 
 foreign import unsafeSetImpl :: forall a b c eff. EffFn3 eff String a b c
@@ -96,7 +97,7 @@ setPropIx
   => SProxy l
   -> b
   -> ReactThisIx p s r1
-  -> EffR eff { | r1} { | r2} (ReactThisIx p s r2)
+  -> EffR eff (RProxy r1) (RProxy r2) (ReactThisIx p s r2)
 setPropIx l b r = EffR $ setProp l b r
 
 foreign import unsafeModifyImpl :: forall a b c d eff. EffFn3 eff String (a -> b) c d
@@ -120,7 +121,7 @@ modifyPropIx
   => SProxy l
   -> (a -> b)
   -> ReactThisIx p s r1
-  -> EffR eff { | r1} { | r2} (ReactThisIx p s r2)
+  -> EffR eff (RProxy r1) (RProxy r2) (ReactThisIx p s r2)
 modifyPropIx l f r = EffR $ modifyProp l f r
 
 foreign import unsafeInsertImpl :: forall a b c eff. EffFn3 eff String a b c
@@ -133,7 +134,7 @@ insertPropIx
   => SProxy l
   -> a
   -> ReactThisIx p s r1
-  -> EffR eff { | r1} { | r2} (ReactThisIx p s r2)
+  -> EffR eff (RProxy r1) (RProxy r2) (ReactThisIx p s r2)
 insertPropIx l a (ReactThisIx r) = EffR $ ReactThisIx <$> runEffFn3 unsafeInsertImpl (reflectSymbol l) a r
 
 foreign import unsafeNullifyImpl :: forall a b eff. EffFn2 eff String a b
@@ -148,7 +149,7 @@ nullifyPropIx
   => RowCons l a r1 r2
   => SProxy l
   -> ReactThisIx p s r2
-  -> EffR eff { | r2} { | r1} (ReactThisIx p s r1)
+  -> EffR eff (RProxy r2) (RProxy r1) (ReactThisIx p s r1)
 nullifyPropIx l (ReactThisIx r) = EffR $ ReactThisIx <$> runEffFn2 unsafeNullifyImpl (reflectSymbol l) r
 
 -- | A render function.
@@ -160,7 +161,7 @@ type RenderIx props state ri ro eff
       , state :: ReactState ReadOnly
       | eff
       )
-      { | ri} { | ro}
+      (RProxy ri) (RProxy ro)
       ReactElement
 
 -- | A get initial state function.
@@ -172,7 +173,7 @@ type GetInitialStateIx props state r eff
       , refs :: ReactRefs Disallowed
       | eff
       )
-      { | r} { | r}
+      (RProxy r) (RProxy r)
       state
 
 -- | A component will mount function.
@@ -184,7 +185,7 @@ type ComponentWillMountIx props state r eff
       , refs :: ReactRefs Disallowed
       | eff
       )
-      {} { | r}
+      (RProxy ()) (RProxy r)
       (ReactThisIx props state r)
 
 -- | A component did mount function.
@@ -196,7 +197,7 @@ type ComponentDidMountIx props state r eff
       , refs :: ReactRefs ReadOnly
       | eff
       )
-      { | r} { | r}
+      (RProxy r) (RProxy r)
       Unit
 
 -- | A component will receive props function.
@@ -209,7 +210,7 @@ type ComponentWillReceivePropsIx props state r eff
       , refs :: ReactRefs ReadOnly
       | eff
       )
-      { | r} { | r}
+      (RProxy r) (RProxy r)
       Unit
 
 -- | A should component update function.
@@ -223,7 +224,7 @@ type ShouldComponentUpdateIx props state (r :: # Type) (eff :: # Effect)
       , refs :: ReactRefs ReadOnly
       | eff
       )
-      { | r} { | r}
+      (RProxy r) (RProxy r)
       Boolean
 
 -- | A component will update function.
@@ -237,7 +238,7 @@ type ComponentWillUpdateIx props state r eff
       , refs :: ReactRefs ReadOnly
       | eff
       )
-      { | r} { | r}
+      (RProxy r) (RProxy r)
       Unit
 
 -- | A component did update function.
@@ -251,7 +252,7 @@ type ComponentDidUpdateIx props state r eff
       , refs :: ReactRefs ReadOnly
       | eff
       )
-      { | r} { | r}
+      (RProxy r) (RProxy r)
       Unit
 
 -- | A component will unmount function.
@@ -263,7 +264,7 @@ type ComponentWillUnmountIx props state r ro eff
       , refs :: ReactRefs ReadOnly
       | eff
       )
-      { | r} { | ro}
+      (RProxy r) (RProxy ro)
       (ReactThisIx props state ro)
 
 -- | Track added properties on the type level.
@@ -400,8 +401,8 @@ createClassIx spc = createClass (toReactSpec spc)
 
 refFn
   :: forall element eff ri ro
-   . (element -> EffR eff ri ro Unit)
-  -> EffR eff ri ro Props
+   . (element -> EffR eff (RProxy ri) (RProxy ro) Unit)
+  -> EffR eff (RProxy ri) (RProxy ro) Props
 refFn fn = EffR $ pureEff (unsafeMkProps "ref" (\e -> unsafePerformEffR (fn e)))
   where
     pureEff :: forall a e. a -> Eff e a
