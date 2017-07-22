@@ -31,7 +31,6 @@ module React.Ix
 
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.Uncurried (EffFn2, EffFn3, runEffFn2, runEffFn3)
-import DOM.Classy.Element (class IsElement)
 import Data.Symbol (reflectSymbol)
 import Prelude (Unit, pure, unit, void, ($), (<$>))
 import React (Disallowed, ReactClass, ReactElement, ReactProps, ReactRefs, ReactSpec, ReactState, ReactThis, ReadOnly, ReadWrite, createClass)
@@ -333,9 +332,8 @@ createClassIx
 createClassIx spc = createClass (toReactSpec spc)
 
 refFn
-  :: forall el eff ri ro
-   . IsElement el
-  => (el -> EffR eff ri ro Unit)
+  :: forall element eff ri ro
+   . (element -> EffR eff ri ro Unit)
   -> EffR eff ri ro Props
 refFn fn = EffR $ pureEff (unsafeMkProps "ref" (\e -> unsafePerformEffR (fn e)))
   where
