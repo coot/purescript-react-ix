@@ -1,4 +1,4 @@
-module React.Ix 
+module React.Ix
   ( class Subrow
   , getProp
   , getPropIx
@@ -24,6 +24,7 @@ module React.Ix
   , specIx'
 
   , toReactSpec
+  , fromReactSpec
   , createClassIx
 
   , refFn
@@ -32,7 +33,7 @@ module React.Ix
 import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.Uncurried (EffFn2, EffFn3, runEffFn2, runEffFn3)
 import Data.Symbol (reflectSymbol)
-import Prelude (Unit, pure, unit, void, ($), (<$>))
+import Prelude (Unit, pure, unit, void, ($), ($>), (<$>))
 import React (Disallowed, ReactClass, ReactElement, ReactProps, ReactRefs, ReactSpec, ReactState, ReactThis, ReadOnly, ReadWrite, createClass)
 import React.DOM.Props (Props, unsafeMkProps)
 import React.Ix.EffR (EffR(..), unsafePerformEffR)
@@ -321,6 +322,34 @@ toReactSpec
     , componentWillUpdate: \this p s -> case componentWillUpdate  (ReactThisIx this) p s of EffR m -> m
     , componentDidUpdate: \this p s -> case componentDidUpdate (ReactThisIx this) p s of EffR m -> m
     , componentWillUnmount: \this -> case componentWillUnmount (ReactThisIx this) of EffR m -> void m
+    }
+
+fromReactSpec
+  :: forall p s eff
+   . ReactSpec p s eff
+  -> ReactSpecIx p s () () () eff
+fromReactSpec
+  { render
+  , displayName
+  , getInitialState
+  , componentWillMount
+  , componentDidMount
+  , componentWillReceiveProps
+  , shouldComponentUpdate
+  , componentWillUpdate
+  , componentDidUpdate
+  , componentWillUnmount
+  }
+  = { render: \(ReactThisIx rThis) -> EffR $ render rThis
+    , displayName
+    , getInitialState: \(ReactThisIx rThis) -> EffR $ getInitialState rThis
+    , componentWillMount: \(ReactThisIx rThis) ->  EffR (componentWillMount rThis) $> ReactThisIx rThis
+    , componentDidMount: \(ReactThisIx rThis) -> EffR $ componentDidMount rThis
+    , componentWillReceiveProps: \(ReactThisIx rThis) p -> EffR $ componentWillReceiveProps rThis p
+    , shouldComponentUpdate: \(ReactThisIx rThis) p s -> EffR $ shouldComponentUpdate rThis p s
+    , componentWillUpdate: \(ReactThisIx rThis) p s -> EffR $  componentWillUpdate rThis p s
+    , componentDidUpdate: \(ReactThisIx rThis) p s -> EffR $ componentDidUpdate rThis p s
+    , componentWillUnmount: \(ReactThisIx rThis) -> EffR (componentWillUnmount rThis) $> ReactThisIx rThis
     }
 
 createClassIx

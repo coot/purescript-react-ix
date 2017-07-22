@@ -20,10 +20,10 @@ import Data.Maybe (Maybe(Just, Nothing))
 import Enzyme (mount)
 import Enzyme.ReactWrapper as E
 import Enzyme.Types (ENZYME)
-import React (Event, ReactProps, ReactRefs, ReactState, ReadOnly, ReadWrite, createElement, readState, transformState)
+import React (Event, ReactProps, ReactRefs, ReactState, ReadOnly, ReadWrite, ReactSpec, createElement, readState, spec, transformState)
 import React.DOM as D
 import React.DOM.Props as P
-import React.Ix (ComponentDidMountIx, ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(ReactThisIx), RenderIx, createClassIx, nullifyPropIx, getProp, getPropIx, insertPropIx, refFn, specIx, specIx')
+import React.Ix (ComponentDidMountIx, ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(ReactThisIx), RenderIx, createClassIx, fromReactSpec, getProp, getPropIx, insertPropIx, nullifyPropIx, refFn, specIx, specIx', toReactSpec)
 import React.Ix.EffR (EffR)
 import Test.Unit (failure, success, suite, test)
 import Test.Unit.Assert (assert, equal)
@@ -49,7 +49,7 @@ refSpec ref = (specIx' (\_ -> ipure unit) willMount willUnmount renderFn)
     didMount this =
       getPropIx (SProxy :: SProxy "element") this
       :>>= liftEff <<< writeRef ref <<< Just
-      :>>= \_ -> ipure unit 
+      :>>= \_ -> ipure unit
 
     setRef
       :: forall e
@@ -180,9 +180,9 @@ main = runKarma do
         Right s -> equal "cSpec" s
 
     test "componendWillUnmount"
-      let 
+      let
         isNullKey :: String -> Array { key :: String, value :: Foreign } -> Boolean
-        isNullKey s ps = 
+        isNullKey s ps =
           case (A.filter (\ { key } -> key == s) ps) !! 0 of
             Nothing -> false
             Just { value } -> isNull value
@@ -208,3 +208,15 @@ main = runKarma do
           case runExcept (readHTMLElement <<< toForeign $ htmlElement) of
             Left _ -> failure "not a html element"
             Right _ -> success
+
+    test "fromReactSpec"
+      let
+        s :: forall eff. ReactSpecIx Unit Unit () () () eff
+        s = fromReactSpec (spec unit (\_ -> pure (D.div' [])))
+      in success
+
+    test "toReactSpec"
+      let
+        s :: forall eff. ReactSpec Unit Unit eff
+        s = toReactSpec sSpec
+      in success
