@@ -127,7 +127,7 @@ nullifyPropIx l (ReactThisIx r) = EffR $ ReactThisIx <$> runEffFn2 unsafeNullify
 
 -- | A render function.
 type RenderIx props state ri ro eff
-   = ReactThisIx props state ri
+    = ReactThisIx props state ri
    -> EffR
       ( props :: ReactProps
       , refs :: ReactRefs Disallowed
@@ -139,7 +139,7 @@ type RenderIx props state ri ro eff
 
 -- | A get initial state function.
 type GetInitialStateIx props state r eff
-    = ReactThisIx props state r
+     = ReactThisIx props state r
     -> EffR
       ( props :: ReactProps
       , state :: ReactState Disallowed
@@ -151,7 +151,7 @@ type GetInitialStateIx props state r eff
 
 -- | A component will mount function.
 type ComponentWillMountIx props state r eff
-   = ReactThisIx props state ()
+    = ReactThisIx props state ()
    -> EffR
       ( props :: ReactProps
       , state :: ReactState ReadWrite
@@ -163,7 +163,7 @@ type ComponentWillMountIx props state r eff
 
 -- | A component did mount function.
 type ComponentDidMountIx props state r eff
-   = ReactThisIx props state r
+    = ReactThisIx props state r
    -> EffR
       ( props :: ReactProps
       , state :: ReactState ReadWrite
@@ -175,7 +175,7 @@ type ComponentDidMountIx props state r eff
 
 -- | A component will receive props function.
 type ComponentWillReceivePropsIx props state r eff
-   = ReactThisIx props state r
+    = ReactThisIx props state r
    -> props
    -> EffR
       ( props :: ReactProps
@@ -202,7 +202,7 @@ type ShouldComponentUpdateIx props state (r :: # Type) (eff :: # Effect)
 
 -- | A component will update function.
 type ComponentWillUpdateIx props state r eff
-   = ReactThisIx props state r
+    = ReactThisIx props state r
    -> props
    -> state
    -> EffR
@@ -216,7 +216,7 @@ type ComponentWillUpdateIx props state r eff
 
 -- | A component did update function.
 type ComponentDidUpdateIx props state r eff
-   = ReactThisIx props state r
+    = ReactThisIx props state r
    -> props
    -> state
    -> EffR
@@ -230,7 +230,7 @@ type ComponentDidUpdateIx props state r eff
 
 -- | A component will unmount function.
 type ComponentWillUnmountIx props state r ro eff
-   = ReactThisIx props state r
+    = ReactThisIx props state r
    -> EffR
       ( props :: ReactProps
       , state :: ReactState ReadOnly
