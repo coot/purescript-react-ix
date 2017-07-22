@@ -11,11 +11,11 @@ import Control.Monad.Eff.Ref (REF, Ref, newRef, readRef, writeRef)
 import Control.Monad.Eff.Uncurried (EffFn1, runEffFn1)
 import Control.Monad.Except (runExcept)
 import DOM (DOM)
-import DOM.HTML.Types (HTMLElement)
+import DOM.HTML.Types (HTMLElement, readHTMLElement)
 import Data.Array ((!!))
 import Data.Array as A
 import Data.Either (Either(..))
-import Data.Foreign (Foreign, isNull, readString)
+import Data.Foreign (Foreign, isNull, readString, toForeign)
 import Data.Maybe (Maybe(Just, Nothing))
 import Enzyme (mount)
 import Enzyme.ReactWrapper as E
@@ -167,7 +167,7 @@ cSpec ref =
 main :: forall e. Eff (avar :: AVAR, console :: CONSOLE, dom :: DOM, enzyme :: ENZYME, ref :: REF | e) Unit
 main = runKarma do
   suite "ReactSpecIx" do
-    test "read custom property" do
+    test "write / read custom property" do
       name <- liftEff $ do
         r <- newRef []
         w <- mount (createElement (createClassIx (cSpec r)) unit [])
@@ -176,7 +176,7 @@ main = runKarma do
         pure n
 
       case runExcept (readString name) of
-        Left _ -> failure "ups..."
+        Left _ -> failure "custom property not set"
         Right s -> equal "cSpec" s
 
     test "componendWillUnmount"
@@ -196,7 +196,7 @@ main = runKarma do
         assert "handler is not null" (isNullKey "handler" ps)
         assert "count is not null" (isNullKey "count" ps)
 
-    test "ref" do
+    test "refFn" do
       e <- liftEff $ do
         r <- newRef Nothing
         w <- mount (createElement (createClassIx (refSpec r)) unit []) >>= E.unmount
@@ -204,4 +204,7 @@ main = runKarma do
 
       case e of
         Nothing -> failure "ref not set in componentDidMount"
-        Just _ -> success
+        Just htmlElement ->
+          case runExcept (readHTMLElement <<< toForeign $ htmlElement) of
+            Left _ -> failure "not a html element"
+            Right _ -> success
