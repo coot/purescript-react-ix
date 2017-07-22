@@ -257,11 +257,11 @@ type ReactSpecIx p s (ri :: # Type) (rr :: # Type) (ro :: # Type) (eff :: # Effe
   , displayName :: String
   , getInitialState :: GetInitialStateIx p s ri eff
   , componentWillMount :: ComponentWillMountIx p s ri eff
-  , componentDidMount :: ComponentDidMountIx p s ri eff
-  , componentWillReceiveProps :: ComponentWillReceivePropsIx p s ri eff
-  , shouldComponentUpdate :: ShouldComponentUpdateIx p s ri eff
-  , componentWillUpdate :: ComponentWillUpdateIx p s ri eff
-  , componentDidUpdate :: ComponentDidUpdateIx p s ri eff
+  , componentDidMount :: ComponentDidMountIx p s rr eff
+  , componentWillReceiveProps :: ComponentWillReceivePropsIx p s rr eff
+  , shouldComponentUpdate :: ShouldComponentUpdateIx p s rr eff
+  , componentWillUpdate :: ComponentWillUpdateIx p s rr eff
+  , componentDidUpdate :: ComponentDidUpdateIx p s rr eff
   , componentWillUnmount :: ComponentWillUnmountIx p s rr ro eff
   }
 
