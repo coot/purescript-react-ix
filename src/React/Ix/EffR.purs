@@ -7,6 +7,9 @@ import Control.Monad.Eff.Unsafe (unsafePerformEff)
 import Data.Newtype (class Newtype)
 import Prelude (class Applicative, class Apply, class Bind, class Functor, class Monad, ap, pure, (<$>), (<<<), (>>=))
 
+-- | Indexed monad that track changes of types i o.  Note that here we are
+-- | tracking changes on the type level while in `ReactThisIx` we are tracking
+-- | changes using `# Type` kind.
 newtype EffR (e :: # Effect) i o a = EffR (Eff e a)
 
 derive instance newtypeEffR :: Newtype (EffR e i o a) _
