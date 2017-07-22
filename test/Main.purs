@@ -2,27 +2,54 @@ module Test.Main where
 
 import Prelude
 
-import Control.IxMonad (ibind, ipure, (:>>=))
+import Control.IxMonad (ipure, (:>>=))
+import Control.Monad.Aff.AVar (AVAR)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Class (liftEff)
-import Control.Monad.Eff.Console (CONSOLE, log)
+import Control.Monad.Eff.Console (CONSOLE)
+import Control.Monad.Eff.Ref (REF, Ref, newRef, readRef, writeRef)
+import Control.Monad.Eff.Uncurried (EffFn1, runEffFn1)
+import Control.Monad.Except (runExcept)
+import DOM (DOM)
 import DOM.HTML.Types (HTMLElement)
-import Data.Maybe (Maybe(..))
-import React (Event, ReactProps, ReactRefs, ReactState, ReadOnly, ReadWrite, readState, transformState)
+import Data.Array ((!!))
+import Data.Array as A
+import Data.Either (Either(..))
+import Data.Foreign (Foreign, isNull, readString)
+import Data.Maybe (Maybe(..), isNothing)
+import Enzyme (mount)
+import Enzyme.ReactWrapper as E
+import Enzyme.Types (ENZYME)
+import React (Event, ReactProps, ReactRefs, ReactState, ReadOnly, ReadWrite, createElement, readState, transformState)
 import React.DOM as D
 import React.DOM.Props as P
-import React.Ix (ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(..), RenderIx, deleteIx, getIx, insertIx, refFn, specIx, specIx')
+import React.Ix (ComponentDidMountIx, ComponentWillMountIx, ComponentWillUnmountIx, ReactSpecIx, ReactThisIx(ReactThisIx), RenderIx, createClassIx, nullifyPropIx, getProp, getPropIx, insertPropIx, refFn, specIx, specIx')
 import React.Ix.EffR (EffR)
+import Test.Unit (failure, success, suite, test)
+import Test.Unit.Assert (assert, equal)
+import Test.Unit.Karma (runKarma)
 import Type.Data.Symbol (SProxy(..))
 
-refSpec :: forall eff. ReactSpecIx Unit Unit () ( element :: HTMLElement ) ( element :: HTMLElement ) eff
-refSpec = specIx' (\_ -> ipure unit) willMount willUnmount renderFn
+foreign import unsafeListPropsImpl :: forall a eff. EffFn1 eff a (Array { key :: String, value :: Foreign })
+
+unsafeListProps :: forall eff a. a -> Eff eff (Array { key :: String, value :: Foreign })
+unsafeListProps = runEffFn1 unsafeListPropsImpl
+
+refSpec :: forall eff. Ref (Maybe HTMLElement) ->  ReactSpecIx Unit Unit () ( element :: HTMLElement ) ( element :: HTMLElement ) ( ref :: REF | eff )
+refSpec ref = (specIx' (\_ -> ipure unit) willMount willUnmount renderFn)
+    { componentDidMount = didMount }
   where
-    willMount :: ComponentWillMountIx Unit Unit () eff
+    willMount :: ComponentWillMountIx Unit Unit () ( ref :: REF | eff )
     willMount = ipure
 
-    willUnmount :: ComponentWillUnmountIx Unit Unit ( element :: HTMLElement ) ( element :: HTMLElement) eff
-    willUnmount = ipure
+    willUnmount :: ComponentWillUnmountIx Unit Unit ( element :: HTMLElement ) ( element :: HTMLElement) ( ref :: REF | eff )
+    willUnmount this = ipure this
+
+    didMount :: ComponentDidMountIx Unit Unit ( element :: HTMLElement ) ( ref :: REF | eff )
+    didMount this =
+      getPropIx (SProxy :: SProxy "element") this
+      :>>= liftEff <<< writeRef ref <<< Just
+      :>>= \_ -> ipure unit 
 
     setRef
       :: forall e
@@ -32,10 +59,10 @@ refSpec = specIx' (\_ -> ipure unit) willMount willUnmount renderFn
           {}
           { element :: HTMLElement }
           Unit
-    setRef this el =
-      void $ insertIx (SProxy :: SProxy "element") el this
+    setRef this el = do
+      void $ insertPropIx (SProxy :: SProxy "element") el this
 
-    renderFn :: RenderIx Unit Unit () (element :: HTMLElement) eff
+    renderFn :: RenderIx Unit Unit () (element :: HTMLElement) ( ref :: REF | eff )
     renderFn this =
       refFn (setRef this)
       :>>= \prop ->
@@ -49,16 +76,17 @@ sSpec = specIx unit (\_ -> pure $ D.div' [ D.text "Hello world!" ])
 
 cWillUnmount :: forall eff. ComponentWillUnmountIx Unit Int ( count :: Maybe Int, name :: String ) ( name :: String ) eff
 cWillUnmount this = do
-  deleteIx (SProxy :: SProxy "count") this
+  nullifyPropIx (SProxy :: SProxy "count") this
 
 cWillMount :: forall eff. ComponentWillMountIx Unit Int ( count :: Maybe Int, name :: String ) eff
 cWillMount this =
-  insertIx (SProxy :: SProxy "count") (Just 0) this
-  :>>= insertIx (SProxy :: SProxy "name") "cSpec"
+  insertPropIx (SProxy :: SProxy "count") (Just 0) this
+  :>>= insertPropIx (SProxy :: SProxy "name") "cSpec"
 
 cSpec
   :: forall eff
-   . ReactSpecIx Unit Int
+   . Ref (Array { key :: String, value :: Foreign })
+  -> ReactSpecIx Unit { count :: Int, name :: String }
       ( count :: Maybe Int
       , name :: String
       , handler
@@ -82,32 +110,98 @@ cSpec
               Unit
       )
       ()
-      eff
-cSpec = (specIx' (\_ -> pure 0) componentWillMount componentWillUnmount render)
-  { displayName = "cSpec" }
+      (ref :: REF | eff)
+cSpec ref =
+  (specIx' (\_ -> pure { count: 0, name: "" })
+    componentWillMount
+    componentWillUnmount
+    render)
+  { displayName = "cSpec"
+  , componentDidMount = componentDidMount
+  }
     where
-      handler this ev =
+      handler (ReactThisIx rThis) ev =
         -- `This` is not `ReactThis`
-        transformState (case this of ReactThisIx rThis -> rThis) (add 1)
+        transformState rThis (\s@{ count } -> s { count = count + 1 })
 
-      componentWillMount t0 = do
-        t1 <- insertIx (SProxy :: SProxy "count") (Just 0) t0
-        t2 <- insertIx (SProxy :: SProxy "handler") (handler t1) t1
-        insertIx (SProxy :: SProxy "name") "cSpec" t2
-          where
-            bind = ibind
+      componentWillMount this =
+        insertPropIx (SProxy :: SProxy "count") (Just 0) this
+        :>>= \t -> insertPropIx (SProxy :: SProxy "handler") (handler t) t
+        :>>= insertPropIx (SProxy :: SProxy "name") "cSpec"
+        :>>= (\t' -> t' <$ getPropIx (SProxy :: SProxy "name") t')
+
+      componentDidMount
+        :: ComponentDidMountIx
+            Unit { count :: Int, name :: String }
+            ( count :: Maybe Int
+            , name :: String
+            , handler
+                :: Event
+                -> Eff
+                    ( props :: ReactProps
+                    , refs :: ReactRefs ReadOnly
+                    , state :: ReactState ReadWrite
+                    | eff )
+                    Unit
+            )
+            ( ref :: REF | eff )
+      componentDidMount this@(ReactThisIx rThis) = liftEff $ do
+        n <- getProp (SProxy :: SProxy "name") this
+        transformState rThis (_ { name = n })
 
       -- this could be derived by the compiler
       componentWillUnmount this =
-        deleteIx (SProxy :: SProxy "count") this
-        :>>= deleteIx (SProxy :: SProxy "handler")
-        :>>= deleteIx (SProxy :: SProxy "name")
+        nullifyPropIx (SProxy :: SProxy "count") this
+        :>>= nullifyPropIx (SProxy :: SProxy "handler")
+        :>>= nullifyPropIx (SProxy :: SProxy "name")
+        :>>= (\t@ReactThisIx rThis -> liftEff do
+                ps <- unsafeListProps rThis
+                writeRef ref ps
+                pure t)
 
       render (this@ReactThisIx that) = do
-        c <- liftEff $ readState that
-        h <- getIx (SProxy :: SProxy "handler") this
-        pure $ D.div [ P.onClick h ] [ D.text (show c) ]
+        { count } <- liftEff $ readState that
+        h <- getPropIx (SProxy :: SProxy "handler") this
+        pure $ D.div [ P.onClick h ] [ D.text (show count) ]
 
-main :: forall e. Eff (console :: CONSOLE | e) Unit
-main = do
-  log "Well done budy..."
+main :: forall e. Eff (avar :: AVAR, console :: CONSOLE, dom :: DOM, enzyme :: ENZYME, ref :: REF | e) Unit
+main = runKarma do
+  suite "ReactSpecIx" do
+    test "read custom property" do
+      name <- liftEff $ do
+        r <- newRef []
+        w <- mount (createElement (createClassIx (cSpec r)) unit [])
+        n <- E.stateByKey "name" w
+        _ <- E.unmount w
+        pure n
+
+      case runExcept (readString name) of
+        Left _ -> failure "ups..."
+        Right s -> equal "cSpec" s
+
+    test "componendWillUnmount"
+      let 
+        isNullKey :: String -> Array { key :: String, value :: Foreign } -> Boolean
+        isNullKey s ps = 
+          case (A.filter (\ { key } -> key == s) ps) !! 0 of
+            Nothing -> false
+            Just { value } -> isNull value
+      in do
+        ps <- liftEff $ do
+          r <- newRef []
+          _ <- mount (createElement (createClassIx (cSpec r)) unit []) >>= E.unmount
+          readRef r
+
+        assert "name is not null" (isNullKey "name" ps)
+        assert "handler is not null" (isNullKey "handler" ps)
+        assert "count is not null" (isNullKey "count" ps)
+
+    test "ref" do
+      e <- liftEff $ do
+        r <- newRef Nothing
+        w <- mount (createElement (createClassIx (refSpec r)) unit []) >>= E.unmount
+        readRef r
+
+      case e of
+        Nothing -> failure "ref not set in componentDidMount"
+        Just _ -> success
