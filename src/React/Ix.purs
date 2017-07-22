@@ -5,7 +5,7 @@ module React.Ix
   , setProp
   , setPropIx
   , insertPropIx
-  , deletePropIx
+  , nullifyPropIx
 
   , RenderIx
   , GetInitialStateIx
@@ -39,7 +39,6 @@ import React.DOM.Props (Props, unsafeMkProps)
 import React.Ix.EffR (EffR(..), unsafePerformEffR)
 import Type.Data.Symbol (class IsSymbol, SProxy)
 import Type.Row (class RowLacks)
-import Unsafe.Coerce (unsafeCoerce)
 
 newtype ReactThisIx p s (r :: # Type) = ReactThisIx (ReactThis p s)
 
@@ -110,9 +109,12 @@ insertPropIx
   -> EffR eff { | r1} { | r2} (ReactThisIx p s r2)
 insertPropIx l a (ReactThisIx r) = EffR $ ReactThisIx <$> runEffFn3 unsafeInsertImpl (reflectSymbol l) a r
 
-foreign import unsafeDeleteImpl :: forall a b eff. EffFn2 eff String a b
+foreign import unsafeNullifyImpl :: forall a b eff. EffFn2 eff String a b
 
-deletePropIx
+-- | Set a property as null and remove it from `EffR`.
+-- | Set to null rather than delete just to be consistent with react, which
+-- | calls ref callbacks with `null` when component is unmounted.
+nullifyPropIx
   :: forall r1 r2 l a p s eff
    . IsSymbol l
   => RowLacks l r1
@@ -120,7 +122,7 @@ deletePropIx
   => SProxy l
   -> ReactThisIx p s r2
   -> EffR eff { | r2} { | r1} (ReactThisIx p s r1)
-deletePropIx l (ReactThisIx r) = EffR $ ReactThisIx <$> runEffFn2 unsafeDeleteImpl (reflectSymbol l) r
+nullifyPropIx l (ReactThisIx r) = EffR $ ReactThisIx <$> runEffFn2 unsafeNullifyImpl (reflectSymbol l) r
 
 -- | A render function.
 type RenderIx props state ri ro eff
