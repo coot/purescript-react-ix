@@ -29,8 +29,10 @@
   },
   "scripts": {
     "build": "pulp build",
-    "pretest": "pulp build -I test -m Test.Main -t karma/test.js && browserify -e karma/test.js -i 'react/addons' -i 'react/lib/ReactContext' -i 'react/lib/ExecutionEnvironment' -o karma/index.js",
-    "test": "karma start --single-run"
+    "pretest": "pulp --then 'browserify -e karma/test.js -i react/addons -i react/lib/ReactContext -i react/lib/ExecutionEnvironment -o karma/index.js' build -I test -m Test.Main -t karma/test.js",
+    "test": "karma start --single-run",
+    "pretest:watch": "pulp --watch --then 'browserify -e karma/test.js -i react/addons -i react/lib/ReactContext -i react/lib/ExecutionEnvironment -o karma/index.js' build -I test -m Test.Main -t karma/test.js &",
+    "test:watch": "karma start"
   },
   "repository": {
     "type": "git",
