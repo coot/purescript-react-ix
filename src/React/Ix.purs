@@ -48,7 +48,14 @@ instance srInst :: Union r t s => Subrow r s
 
 foreign import unsafeGetImpl :: forall a b eff. EffFn2 eff String a b
 
-get
+-- | Safe way of reading a property. Note that if you set a callback within a
+-- | life-cycle method where the property is defined, and it will be called
+-- | after the component is unmounted this might return undefined (if
+-- | you removed that property in `componentWillUnmount`).  The usual
+-- | workaround that is to set `isMounted` property in `componentWillMount` and
+-- | then reset it on `componentWillUnmount` and check it before reading in
+-- | async callbacks.
+getProp
   :: forall r r' l a p s eff
    . IsSymbol l
   => RowCons l a r' r
@@ -230,12 +237,15 @@ type ComponentWillUnmountIx props state r ro eff
       { | r} { | ro}
       (ReactThisIx props state ro)
 
--- | Track added properties on the type level. `ri` row describe added
--- | properties in `ComponentWillMount` (callbacks), `rr` describes added
--- | properties withing render method (refs) and `ro` is the state of
--- | `ReactThis` after `compoentnWillUnmount`. Likely you want to use
+-- | Track added properties on the type level.
+-- |
+-- | * `ri` row describes added properties in `ComponentWillMountIx` (_callbacks_)
+-- | * `rr` row describes added properties within render method (_refs_)
+-- | * `ro` row is the state of `ReactThis` after `componetnWillUnmount`.
+-- |
+-- | Likely you want to use
 -- | ``` purescript
--- | ReactSPecIx p s ri rr () eff
+-- | ReactSpecIx p s ri rr () eff
 -- | ```
 -- | This will ensure that you don't leak memory, by keeping a reference.
 type ReactSpecIx p s (ri :: # Type) (rr :: # Type) (ro :: # Type) (eff :: # Effect) =
