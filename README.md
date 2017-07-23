@@ -19,7 +19,7 @@ bindings has very few dependencies.  This package also does not depend on
 `purescript-dom` or `purescript-dom-classy`, but you can use `refFn` with data
 types from any of those.  The only dependencies are on [index
 monads](https://pursuit.purescript.org/packages/purescript-indexed-monad)
-and [RowCons](https://pursuit.purescript.org/packages/purescript-typelevel-prelude).
+and [typelevel-prelude](https://pursuit.purescript.org/packages/purescript-typelevel-prelude).
 
 # Documentation
 
