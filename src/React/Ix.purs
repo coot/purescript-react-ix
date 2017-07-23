@@ -1,6 +1,5 @@
 module React.Ix
-  ( class Subrow
-  , getProp
+  ( getProp
   , getPropIx
   , setProp
   , setPropIx
@@ -40,14 +39,12 @@ import Prelude (Unit, pure, unit, void, ($), ($>), (<$>))
 import React (Disallowed, ReactClass, ReactElement, ReactProps, ReactRefs, ReactSpec, ReactState, ReactThis, ReadOnly, ReadWrite, createClass)
 import React.DOM.Props (Props, unsafeMkProps)
 import React.Ix.EffR (EffR(..), unsafePerformEffR)
+import React.Ix.Subrow (class Subrow)
 import Type.Data.Symbol (class IsSymbol, SProxy)
 import Type.Prelude (RProxy)
 import Type.Row (class RowLacks)
 
 newtype ReactThisIx p s (r :: # Type) = ReactThisIx (ReactThis p s)
-
-class Subrow (r :: # Type) (s :: # Type)
-instance srInst :: Union r t s => Subrow r s
 
 foreign import unsafeGetImpl :: forall a b eff. EffFn2 eff String a b
 
