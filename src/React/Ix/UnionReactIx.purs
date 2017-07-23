@@ -4,6 +4,7 @@ import Control.Monad.Eff (kind Effect)
 import Prelude (Unit, (*>), (<$>))
 import React.Ix (ReactThisIx)
 import React.Ix.EffR (EffR(..))
+import React.Ix.Subrow (class Subrow)
 import Type.Row (RProxy)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -20,3 +21,6 @@ instance unionReactIxReactThixIx :: UnionReactIx e i1 o1 (ReactThisIx p s o1) i2
       coerceIx = unsafeCoerce
 
 infixr 5 union as :<>
+
+limit :: forall p s r1 r2. Subrow r2 r1 => ReactThisIx p s r1 -> ReactThisIx p s r2
+limit = unsafeCoerce
