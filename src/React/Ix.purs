@@ -1,6 +1,5 @@
 module React.Ix
-  ( class Subrow
-  , getProp
+  ( getProp
   , getPropIx
   , setProp
   , setPropIx
@@ -45,9 +44,6 @@ import Type.Prelude (RProxy)
 import Type.Row (class RowLacks)
 
 newtype ReactThisIx p s (r :: # Type) = ReactThisIx (ReactThis p s)
-
-class Subrow (r :: # Type) (s :: # Type)
-instance srInst :: Union r t s => Subrow r s
 
 foreign import unsafeGetImpl :: forall a b eff. EffFn2 eff String a b
 
@@ -278,25 +274,26 @@ type ComponentWillUnmountIx props state r ro eff
 -- | ReactSpecIx p s ri rr () eff
 -- | ```
 -- | This will ensure that you don't leak memory, by keeping a reference.
-type ReactSpecIx p s (ri :: # Type) (rr :: # Type) (ro :: # Type) (eff :: # Effect) =
-  Subrow ri rr =>
-  Subrow ro rr =>
-  { render :: RenderIx p s ri rr eff
-  , displayName :: String
-  , getInitialState :: GetInitialStateIx p s ri eff
-  , componentWillMount :: ComponentWillMountIx p s ri eff
-  , componentDidMount :: ComponentDidMountIx p s rr eff
-  , componentWillReceiveProps :: ComponentWillReceivePropsIx p s rr eff
-  , shouldComponentUpdate :: ShouldComponentUpdateIx p s rr eff
-  , componentWillUpdate :: ComponentWillUpdateIx p s rr eff
-  , componentDidUpdate :: ComponentDidUpdateIx p s rr eff
-  , componentWillUnmount :: ComponentWillUnmountIx p s rr ro eff
-  }
-
+type ReactSpecIx p s (ri :: # Type) (rr :: # Type) (ro :: # Type) (eff :: # Effect)
+   = forall ri' ro'
+   . Union ri ri' rr
+  => Union ro ro' rr
+  => { render :: RenderIx p s ri rr eff
+     , displayName :: String
+     , getInitialState :: GetInitialStateIx p s ri eff
+     , componentWillMount :: ComponentWillMountIx p s ri eff
+     , componentDidMount :: ComponentDidMountIx p s rr eff
+     , componentWillReceiveProps :: ComponentWillReceivePropsIx p s rr eff
+     , shouldComponentUpdate :: ShouldComponentUpdateIx p s rr eff
+     , componentWillUpdate :: ComponentWillUpdateIx p s rr eff
+     , componentDidUpdate :: ComponentDidUpdateIx p s rr eff
+     , componentWillUnmount :: ComponentWillUnmountIx p s rr ro eff
+     }
+ 
 specIx'
-  :: forall p s ri rr ro eff
-   . Subrow ro rr
-  => Subrow ri rr
+  :: forall p s ri ri' rr ro ro' eff
+   . Union ro ro' rr
+  => Union ri ri' rr
   => GetInitialStateIx p s ri eff
   -> ComponentWillMountIx p s ri eff
   -> ComponentWillUnmountIx p s rr ro eff
@@ -323,9 +320,9 @@ specIx
 specIx s r = (specIx' (\_ -> pure s) pure pure r)
 
 toReactSpec
-  :: forall p s ri rr ro eff
-   . Subrow ri rr
-  => Subrow ro rr
+  :: forall p s ri ri' rr ro ro' eff
+   . Union ri ri' rr
+  => Union ro ro' rr
   => ReactSpecIx p s ri rr ro eff
   -> ReactSpec p s eff
 toReactSpec
@@ -383,18 +380,18 @@ fromReactSpec
 -- | Think of `ReactSpecIx` as a newtype wrapper around `ReactSpecIx`, thus
 -- | `under`.
 underReactSpecIx
-  :: forall p1 s1 p2 s2 i r o eff1 eff2
-   . Subrow i r
-  => Subrow o r
+  :: forall p1 s1 p2 s2 i i' r o o' eff1 eff2
+   . Union i i' r
+  => Union o o' r
   => (ReactSpecIx p1 s1 () () () eff1 -> ReactSpecIx p2 s2 i r o eff2)
   -> ReactSpec p1 s1 eff1
   -> ReactSpec p2 s2 eff2
 underReactSpecIx f s = toReactSpec (f (fromReactSpec s))
 
 createClassIx
-  :: forall p s ri rr ro eff
-   . Subrow ri rr
-  => Subrow ro rr
+  :: forall p s ri ri' rr ro ro' eff
+   . Union ri ri' rr
+  => Union ro ro' rr
   => ReactSpecIx p s ri rr ro eff
   -> ReactClass p
 createClassIx spc = createClass (toReactSpec spc)
