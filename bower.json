@@ -20,7 +20,7 @@
   "devDependencies": {
     "purescript-console": "^3.0.0",
     "purescript-psci-support": "^3.0.0",
-    "purescript-enzyme": "^0.6.1",
+    "purescript-enzyme": "^0.7.0",
     "purescript-test-unit": "^13.0.0",
     "purescript-karma-test-unit": "^2.0.0",
     "purescript-nullable": "^3.0.0",
