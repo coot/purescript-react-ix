@@ -5,7 +5,7 @@ import Control.Monad.Eff (Eff, kind Effect)
 import Control.Monad.Eff.Class (class MonadEff)
 import Control.Monad.Eff.Unsafe (unsafePerformEff)
 import Data.Newtype (class Newtype)
-import Prelude (class Applicative, class Apply, class Bind, class Functor, class Monad, ap, pure, (<$>), (<<<), (>>=))
+import Prelude (class Applicative, class Apply, class Bind, class Functor, class Monad, pure, (>>=))
 import Type.Prelude (RProxy)
 
 -- | Indexed monad that track changes of types i o.  Note that here we are
@@ -15,20 +15,19 @@ newtype EffR (e :: # Effect) i o a = EffR (Eff e a)
 
 derive instance newtypeEffR :: Newtype (EffR e (RProxy i) (RProxy o) a) _
 
-instance functorEffR :: Functor (EffR e (RProxy i) (RProxy o)) where
-  map f (EffR m) = EffR (f <$> m)
+derive newtype instance functorEffR :: Functor (EffR e (RProxy i) (RProxy o))
 
-instance applyEffR :: Apply (EffR e (RProxy i) (RProxy i)) where
-  apply = ap
+derive newtype instance applyEffR :: Apply (EffR e (RProxy i) (RProxy i))
 
-instance applicativeEff :: Applicative (EffR e (RProxy i) (RProxy i)) where
-  pure = EffR <<< pure
+derive newtype instance applicativeEff :: Applicative (EffR e (RProxy i) (RProxy i))
 
-instance bindEffR :: Bind (EffR e (RProxy i) (RProxy i)) where
-  bind (EffR m) f = EffR (m >>= \a -> case f a of EffR m' -> m')
+derive newtype instance bindEffR :: Bind (EffR e (RProxy i) (RProxy i))
 
-instance monadEffR :: Monad (EffR e (RProxy i) (RProxy i))
+derive newtype instance monadEffR :: Monad (EffR e (RProxy i) (RProxy i))
 
+-- | Sometimes puresript has difficulty inferring phantom types involved.  In
+-- | this case either add explicit type application or use `EffR` directly
+-- | across your monadic computation.
 instance monadEffEffR :: MonadEff e (EffR e (RProxy i) (RProxy i)) where
   liftEff = EffR
 
